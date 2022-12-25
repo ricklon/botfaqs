@@ -5,4 +5,4 @@ allowed_channel_name = "chat2gpt"
 allowed_channel_id = 1050950698382151680
 
 # The Discord bot token
-discord_bot_token = "MTA1MDkwNTIwMDc0NTAwMTAwMQ.G2_5j1.LRlN-wF9LEFktCmtrYChAZxEYErdbRqDWheR1s"
+discord_bot_token = "your_bot_token_here"
