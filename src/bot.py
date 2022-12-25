@@ -12,6 +12,8 @@ import csv
 import faqorm 
 import setupdb
 
+#load secrets
+import creds
 
 # Load the settings from the settings.toml file
 settings = toml.load("settings.toml")
