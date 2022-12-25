@@ -19,6 +19,6 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-run = "python src/bot.py"
+run = "python src/main.py"
 
 

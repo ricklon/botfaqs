@@ -2,6 +2,8 @@
 import os
 import asyncio
 import logging
+import toml
+
 import discord
 from discord.ext import commands
 from discord.ext.commands import has_permissions
@@ -11,9 +13,14 @@ import faqorm
 import setupdb
 
 
+# Load the settings from the settings.toml file
+settings = toml.load("settings.toml")
 
-# The name of the channel that the bot should accept messages from
-allowed_channel_name = "chat2gpt"
+# Extract the values from the settings dictionary
+allowed_channel_name = settings["allowed_channel_name"]
+allowed_channel_id = settings["allowed_channel_id"]
+discord_bot_token = settings["discord_bot_token"]
+
 
 # Get the list of default intents
 intents = discord.Intents.all()
@@ -27,8 +34,7 @@ intents = discord.Intents.all()
 # Create a Bot instance with the specified command prefix
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Set the allowed_channel_id variable to the specified value
-allowed_channel_id = 1050950698382151680
+
 
 # Define the on_ready event handler
 @bot.event
@@ -36,7 +42,7 @@ async def on_ready():
     await setupdb.create_database()
     # Print the bot's name
     print(f"Logged in as {bot.user.name}")
-    
+
     # Get the channel object for the allowed channel
     channel = bot.get_channel(allowed_channel_id)
     await channel.send(f"Logged in as {bot.user.name}")
@@ -327,8 +333,11 @@ async def bulk_add_json(ctx):
     result = await faqorm.bulk_add_faqs(str(ctx.channel.id), ctx.message.id, json_message.content)
     await ctx.send(result)
 
+def run():
+    # run the tortoise orm setup
+    asyncio.run(setupdb.create_database())
+    # Use the Discord bot token variable when starting the bot
+    bot.run(discord_bot_token)
 
-# run the tortoise orm setup
-asyncio.run(setupdb.create_database())
-# Use the Discord bot token variable when starting the bot
-bot.run(discord_bot_token)
+if __name__ == "__main__":
+    run()
