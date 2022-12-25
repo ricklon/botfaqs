@@ -1,0 +1,13 @@
+{
+    "questions": [
+    {
+    "question": "What is the maximum print size of the Ender 3 Pro V2 3D printer?",
+    "answer": "The maximum print size of the Ender 3 Pro V2 3D printer is 220 x 220 x 250 mm."
+    },
+    {
+    "question": "What types of filaments can be used with the Ender 3 Pro V2 3D printer?",
+    "answer": "The Ender 3 Pro V2 3D printer can use 1.75 mm PLA, ABS, PETG, TPU, and other filaments."
+    }
+    ]
+    }
+    
