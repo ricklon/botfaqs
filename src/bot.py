@@ -326,6 +326,51 @@ async def bulk_add_json(ctx):
     result = await faqorm.bulk_add_faqs(str(ctx.channel.id), ctx.message.id, json_message.content)
     await ctx.send(result)
 
+
+@bot.command(name="reset_all_faqs", help="Reset all the FAQs for the server")
+@has_permissions(manage_messages=True)
+async def reset_all_faqs(ctx):
+    # Prompt the user to confirm that they want to reset the FAQs
+    confirm_message = await ctx.send("Are you sure you want to reset all the FAQs for the server? This cannot be undone. (y/n)")
+    def check(m):
+        return m.author == ctx.author and m.channel == ctx.channel
+    try:
+        confirmation = await bot.wait_for('message', check=check, timeout=60.0)
+    except asyncio.TimeoutError:
+        await confirm_message.delete()
+        await ctx.send("No confirmation received, cancelling operation.")
+        return
+    if confirmation.content.lower() == "y":
+        # Truncate the FAQ table
+        await faqorm.reset_all()
+        await ctx.send("All FAQs have been reset!")
+    else:
+        await ctx.send("Reset cancelled.")
+
+@bot.command(name="reset_faqs", help="Reset all the FAQs for the current channel")
+@has_permissions(manage_messages=True)
+async def reset_faqs(ctx):
+    # Get the current channel ID
+    channel_id = ctx.channel.id
+
+    # Prompt the user to confirm that they want to reset the FAQs
+    confirm_message = await ctx.send("Are you sure you want to reset all the FAQs for this channel? This cannot be undone. (y/n)")
+    def check(m):
+        return m.author == ctx.author and m.channel == ctx.channel
+    try:
+        confirmation = await bot.wait_for('message', check=check, timeout=60.0)
+    except asyncio.TimeoutError:
+        await confirm_message.delete()
+        await ctx.send("No confirmation received, cancelling operation.")
+        return
+    if confirmation.content.lower() == "y":
+        # Delete all the FAQs for the current channel
+        await faqorm.FAQ.filter(channel_id=channel_id).delete()
+        await ctx.send("All FAQs for this channel have been reset!")
+    else:
+        await ctx.send("Reset cancelled.")
+
+
 def run():
     # run the tortoise orm setup
     asyncio.run(setupdb.create_database())

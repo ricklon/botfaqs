@@ -54,3 +54,14 @@ async def bulk_add_faqs(channel_id, message_id, faqs):
     for faq in faqs:
         await add_faq(channel_id, message_id, faq['question'], faq['answer'])
     return 'FAQs added successfully!'
+
+# #Reset all FAQs in a channel
+# async def reset_faqs(channel_id):
+#     """Delete all FAQ entries for a particular channel."""
+#     await FAQ.filter(channel_id=channel_id).delete()
+
+#Reset all FAQs
+async def reset_all():
+    """Delete all FAQ entries."""
+    await FAQ.all().delete()
+
