@@ -41,7 +41,6 @@ async def like_faq(faq_id):
     # await FAQ.filter(id=faq_id).update(likes=FAQ.likes + 1)
     await FAQ.filter(id=faq_id).update(likes=F('likes') + 1)      
 
-
 async def bulk_add_faqs(channel_id, message_id, faqs):
     """Create multiple new FAQ entries from a JSON object."""
     # Parse the JSON object

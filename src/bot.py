@@ -22,9 +22,16 @@ settings = toml.load("settings.toml")
 allowed_channel_name = settings["allowed_channel_name"]
 allowed_channel_id = settings["allowed_channel_id"]
 
+#Custom Message class
+class CustomMessage(discord.Message):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.custom_attributes = {}
 
 # Get the list of default intents
 intents = discord.Intents.all()
+
+
 
 # Create a Bot instance with the specified command prefix
 bot = commands.Bot(command_prefix="!", intents=intents)
@@ -39,6 +46,10 @@ async def on_ready():
     # Get the channel object for the allowed channel
     channel = bot.get_channel(allowed_channel_id)
     await channel.send(f"Logged in as {bot.user.name}")
+
+
+
+
 
 @bot.command()
 async def hello(ctx):
@@ -83,8 +94,49 @@ async def add_faq(ctx, channel: discord.TextChannel = None):
     await ctx.send('FAQ added successfully!')
 
 
+class CustomMessage(discord.Message):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.custom_attributes = {}
+
+# @bot.command()
+# async def list_faqs(ctx,  channel: discord.TextChannel = None):
+#     """List all FAQ entries for a particular channel."""
+#     # If no channel is provided, use the current channel
+#     if channel is None:
+#         channel = ctx.channel
+#     print(f"Adding FAQ for channel: {ctx.channel.name}, id: {channel.id}, msg.id: {ctx.message.id}")
+#     # Set the channel_id to the channel's ID
+#     channel_id = channel.id
+
+#     faqs = await faqorm.list_faqs(str(channel_id))
+#     if not faqs:
+#         await ctx.send('There are no FAQs for this channel.')
+#     else:
+#         for faq in faqs:
+#             # Send the FAQ and add a like emoji button
+#             message = await ctx.send(f'id: {faq.id}, channel: {bot.get_channel(int(faq.channel_id))}, msg_id: {faq.message_id}, {faq.question}: {faq.answer}, likes: {faq.likes}')
+#             # Set the faq_id as a custom attribute of the message
+#             message.__dict__['faq_id'] = faq.id
+#             await message.add_reaction("👍")
+
+# @bot.event
+# async def on_reaction_add(reaction, user):
+#     # Check if the reaction is the like emoji
+#     if str(reaction.emoji) == "👍":
+#         # Get the message that the reaction was added to
+#         message = reaction.message
+#         # Get the channel where the message was sent
+#         channel = message.channel
+#         # Check if the channel is the allowed channel
+#         if channel.id == allowed_channel_id:
+#             # Get the FAQ ID from the message's custom attribute
+#             faq_id = message.__dict__['faq_id']
+#             # Increment the number of likes for the FAQ
+#             await faqorm.like_faq(faq_id)
+
 @bot.command()
-async def list_faqs(ctx,  channel: discord.TextChannel = None):
+async def list_faqs(ctx, channel: discord.TextChannel = None):
     """List all FAQ entries for a particular channel."""
     # If no channel is provided, use the current channel
     if channel is None:
@@ -98,7 +150,30 @@ async def list_faqs(ctx,  channel: discord.TextChannel = None):
         await ctx.send('There are no FAQs for this channel.')
     else:
         for faq in faqs:
-            await ctx.send(f'id: {faq.id}, channel: {bot.get_channel(int(faq.channel_id))}, msg_id: {faq.message_id}, {faq.question}: {faq.answer}, likes: {faq.likes}')
+            # Create an Embed object
+            embed = discord.Embed(
+                title=f'FAQ id: {faq.id}',
+                description=f'[faq_id={faq.id}] {faq.question}: {faq.answer} {faq.likes}',
+                color=discord.Color.blue()
+            )
+            # Add the Embed object to the message
+            message = await ctx.send(embed=embed)
+            # Add a reaction to the message
+            await message.add_reaction('👍')
+
+@bot.event
+async def on_reaction_add(reaction, user):
+    # Get the message that the reaction was added to
+    message = reaction.message
+    # Check if the reaction is the thumbs up emoji
+    if str(reaction.emoji) == '👍':
+        # Get the Embed object associated with the message
+        embed = message.embeds[0]
+        # Get the faq_id from the description field of the Embed object
+        faq_id = int(embed.description.split('[faq_id=')[1].split(']')[0])
+        # Call the like_faq function with the faq_id
+        await faqorm.like_faq(faq_id)
+
 
 @bot.command()
 async def update_faq(ctx, faq_id: int = None):
