@@ -1,8 +1,6 @@
 # The name of the channel that the bot should accept messages from
-allowed_channel_name = "chat2gpt"
+allowed_channel_name = "botfaqs"
 
 # Set the allowed_channel_id variable to the specified value
-allowed_channel_id = 1050950698382151680
+allowed_channel_id = 1057341784709148884
 
-# The Discord bot token
-discord_bot_token = "your_bot_token_here_X"

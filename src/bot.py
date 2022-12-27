@@ -21,22 +21,13 @@ settings = toml.load("settings.toml")
 # Extract the values from the settings dictionary
 allowed_channel_name = settings["allowed_channel_name"]
 allowed_channel_id = settings["allowed_channel_id"]
-discord_bot_token = settings["discord_bot_token"]
 
 
 # Get the list of default intents
 intents = discord.Intents.all()
 
-# Add the PrivilegedIntents.MESSAGE_CONTENT intent to the list of intents
-#intents.privileged.add(discord.Intents.MESSAGE_CONTENT)
-
-# Create the Discord client with the specified intents
-#client = discord.Client(intents=intents)
-
 # Create a Bot instance with the specified command prefix
 bot = commands.Bot(command_prefix="!", intents=intents)
-
-
 
 # Define the on_ready event handler
 @bot.event
@@ -339,7 +330,7 @@ def run():
     # run the tortoise orm setup
     asyncio.run(setupdb.create_database())
     # Use the Discord bot token variable when starting the bot
-    bot.run(discord_bot_token)
+    bot.run(creds.discord_bot_token)
 
 if __name__ == "__main__":
     run()
