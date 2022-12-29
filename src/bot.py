@@ -99,41 +99,6 @@ class CustomMessage(discord.Message):
         super().__init__(*args, **kwargs)
         self.custom_attributes = {}
 
-# @bot.command()
-# async def list_faqs(ctx,  channel: discord.TextChannel = None):
-#     """List all FAQ entries for a particular channel."""
-#     # If no channel is provided, use the current channel
-#     if channel is None:
-#         channel = ctx.channel
-#     print(f"Adding FAQ for channel: {ctx.channel.name}, id: {channel.id}, msg.id: {ctx.message.id}")
-#     # Set the channel_id to the channel's ID
-#     channel_id = channel.id
-
-#     faqs = await faqorm.list_faqs(str(channel_id))
-#     if not faqs:
-#         await ctx.send('There are no FAQs for this channel.')
-#     else:
-#         for faq in faqs:
-#             # Send the FAQ and add a like emoji button
-#             message = await ctx.send(f'id: {faq.id}, channel: {bot.get_channel(int(faq.channel_id))}, msg_id: {faq.message_id}, {faq.question}: {faq.answer}, likes: {faq.likes}')
-#             # Set the faq_id as a custom attribute of the message
-#             message.__dict__['faq_id'] = faq.id
-#             await message.add_reaction("👍")
-
-# @bot.event
-# async def on_reaction_add(reaction, user):
-#     # Check if the reaction is the like emoji
-#     if str(reaction.emoji) == "👍":
-#         # Get the message that the reaction was added to
-#         message = reaction.message
-#         # Get the channel where the message was sent
-#         channel = message.channel
-#         # Check if the channel is the allowed channel
-#         if channel.id == allowed_channel_id:
-#             # Get the FAQ ID from the message's custom attribute
-#             faq_id = message.__dict__['faq_id']
-#             # Increment the number of likes for the FAQ
-#             await faqorm.like_faq(faq_id)
 
 @bot.command()
 async def list_faqs(ctx, channel: discord.TextChannel = None):
@@ -174,6 +139,18 @@ async def on_reaction_add(reaction, user):
         # Call the like_faq function with the faq_id
         await faqorm.like_faq(faq_id)
 
+@bot.event
+async def on_reaction_remove(reaction, user):
+    # Get the message that the reaction was removed from
+    message = reaction.message
+    # Check if the reaction is the thumbs up emoji
+    if str(reaction.emoji) == '👍':
+        # Get the Embed object associated with the message
+        embed = message.embeds[0]
+        # Get the faq_id from the description field of the Embed object
+        faq_id = int(embed.description.split('[faq_id=')[1].split(']')[0])
+        # Call the unlike_faq function with the faq_id
+        await faqorm.unlike_faq(faq_id)
 
 @bot.command()
 async def update_faq(ctx, faq_id: int = None):
@@ -444,6 +421,26 @@ async def reset_faqs(ctx):
         await ctx.send("All FAQs for this channel have been reset!")
     else:
         await ctx.send("Reset cancelled.")
+
+
+@bot.command()
+async def save_faqs(ctx, filename: str = None):
+    # If no filename is provided, prompt the user for a filename
+    if filename is None:
+        await ctx.send('Please enter a filename for the CSV file:')
+        filename_message = await bot.wait_for('message', check=lambda message: message.author == ctx.author and message.channel == ctx.channel)
+        filename = filename_message.content
+    
+    # Save the FAQs to a CSV file
+    df = await faqorm.save_faqs_as_csv()
+
+    # Create a BytesIO object from the CSV data
+    csv_data = df.to_csv(index=False).encode()
+    bio = io.BytesIO(csv_data)
+
+    # Send the CSV file to the user
+    await ctx.send(file=discord.File(bio, filename))
+
 
 
 def run():

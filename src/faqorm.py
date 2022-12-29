@@ -2,6 +2,7 @@ from tortoise.models import Model
 from tortoise import fields
 from tortoise.expressions import F
 import json
+import pandas as pd
 
 
 
@@ -38,8 +39,11 @@ async def get_faq(faq_id):
 
 async def like_faq(faq_id):
     """Increment the number of likes for an FAQ entry."""
-    # await FAQ.filter(id=faq_id).update(likes=FAQ.likes + 1)
-    await FAQ.filter(id=faq_id).update(likes=F('likes') + 1)      
+    await FAQ.filter(id=faq_id).update(likes=F('likes') + 1)   
+
+async def unlike_faq(faq_id):
+    """Increment the number of likes for an FAQ entry."""
+    await FAQ.filter(id=faq_id).update(likes=F('likes') - 1)     
 
 async def bulk_add_faqs(channel_id, message_id, faqs):
     """Create multiple new FAQ entries from a JSON object."""
@@ -58,6 +62,16 @@ async def bulk_add_faqs(channel_id, message_id, faqs):
 # async def reset_faqs(channel_id):
 #     """Delete all FAQ entries for a particular channel."""
 #     await FAQ.filter(channel_id=channel_id).delete()
+
+# No function .to_dataframe
+# async def save_faqs_as_csv():
+
+#     #get the orm data into a pandas df
+#     df = await FAQ.all().to_dataframe()
+
+#     # Return the DataFrame so it can be used in the save_faqs function
+#     return df
+
 
 #Reset all FAQs
 async def reset_all():

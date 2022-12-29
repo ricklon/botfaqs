@@ -1,7 +1,11 @@
 
+#BOT FAQs
 
+Q&A for your Discord Server
 
-Suggested Features for the FAQ System
+Users choose do like the command structure below? I can implement if there's demand. Right now it's just the function names as the commands.
+
+## Style 1
 
 !faq add: This command allows users to add a new FAQ to the list. It may require additional arguments, such as the question and answer text, as well as the category to which the FAQ belongs.
 
