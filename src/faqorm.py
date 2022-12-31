@@ -14,12 +14,15 @@ class FAQ(Model):
     question = fields.TextField()
     answer = fields.TextField()
     likes = fields.IntField(default=0)
+    dislikes = fields.IntField(default=0)
     created_at = fields.DatetimeField(auto_now_add=True)
     updated_at = fields.DatetimeField(auto_now=True)
+
 
 async def add_faq(channel_id, message_id, question, answer):
     """Create a new FAQ entry."""
     faq = await FAQ.create(channel_id=channel_id, message_id=message_id, question=question, answer=answer)
+    return faq.id
 
 async def list_faqs(channel_id):
     """Retrieve a list of all FAQ entries for a particular channel."""
@@ -44,6 +47,15 @@ async def like_faq(faq_id):
 async def unlike_faq(faq_id):
     """Increment the number of likes for an FAQ entry."""
     await FAQ.filter(id=faq_id).update(likes=F('likes') - 1)     
+
+async def dislike_faq(faq_id):
+    """Increment the number of dislikes for an FAQ entry."""
+    await FAQ.filter(id=faq_id).update(dislikes=F('likes') + 1)
+
+async def undislike_faq(faq_id):
+    # Get the FAQ with the specified ID
+     """Decriment the number of dislikes for an FAQ entry."""
+     await FAQ.filter(id=faq_id).update(dislikes=F('likes') - 1)
 
 async def bulk_add_faqs(channel_id, message_id, faqs):
     """Create multiple new FAQ entries from a JSON object."""

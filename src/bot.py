@@ -28,6 +28,7 @@ class CustomMessage(discord.Message):
         super().__init__(*args, **kwargs)
         self.custom_attributes = {}
 
+
 # Get the list of default intents
 intents = discord.Intents.all()
 
@@ -48,13 +49,182 @@ async def on_ready():
     await channel.send(f"Logged in as {bot.user.name}")
 
 
+# @bot.command()
+# async def vote(ctx, direction: str):
+#     """Upvote or downvote a pinned message."""
+#     # Get the channel where the command was called
+#     channel = ctx.message.channel
 
+#     # Get the pinned messages in the channel
+#     pins = await channel.pins()
+
+#     # Find the message the user wants to vote on
+#     target_message = None
+#     for message in pins:
+#         if message.id == ctx.message.id:
+#             target_message = message
+#             break
+
+#     if target_message is None:
+#         # The message the user wants to vote on is not pinned
+#         await ctx.send("That message is not pinned!")
+#         return
+
+#     # Update the vote count based on the direction
+#     if direction.lower() == "up":
+#         # Increment the vote count
+#         vote_count = target_message.vote_count + 1
+#     elif direction.lower() == "down":
+#         # Decrement the vote count
+#         vote_count = target_message.vote_count - 1
+#     else:
+#         # Invalid direction
+#         await ctx.send("Please specify either 'up' or 'down' as the direction.")
+#         return
+
+#     # Store the new vote count somewhere (e.g. in a database or in a file)
+
+#     # Edit the pinned message to include the updated vote count
+#     await target_message.edit(content=f"{target_message.content} (Vote count: {vote_count})")
+
+
+@bot.command()
+async def vote(ctx):
+    """Upvote or downvote a pinned message."""
+    # Get the channel where the command was called
+    channel = ctx.message.channel
+
+    # Get the pinned messages in the channel
+    pins = await channel.pins()
+
+    # Print the ID and content of each pinned message
+    for message in pins:
+        await ctx.send(f"ID: {channel.name} | {message.id} | Content: {message.content}")
+
+    # Ask the user to enter the ID of the message they want to vote on
+    await ctx.send("Enter the ID of the message you want to vote on:")
+
+    # Wait for the user's response
+    def check(m):
+        return m.author == ctx.message.author and m.channel == ctx.message.channel
+
+    try:
+        message_id = await bot.wait_for('message', check=check, timeout=30.0)
+        message_id = int(message_id.content)
+    except asyncio.TimeoutError:
+        await ctx.send("Timed out waiting for message ID.")
+        return
+    except ValueError:
+        await ctx.send("Invalid message ID. Please enter a valid message ID.")
+        return
+
+    # Find the message the user wants to vote on
+    target_message = None
+    for message in pins:
+        if message.id == message_id:
+            target_message = message
+            break
+    # Debugging: Print the ID and content of the target message 
+    print(f"ID: {target_message.id} | Content: {target_message.content}")
+
+    if target_message is None:
+        # The message the user wants to vote on is not pinned
+        await ctx.send("That message is not pinned!")
+        return
+
+    # target_message = await ctx.fetch_message(target_message.id)
+    # #faq_id = int(message.content.split('[faq_id=')[1].split(']')[0])
+    # #Debug message
+    # # Print the ID, content, and author of the message
+    # print(f"ID: {target_message.id}")
+    # print(f"Content: {target_message.content}")
+    # print(f"Author: {target_message.author}")
+
+    # # Print the time the message was sent
+    # #print(f"Timestamp: {target_message.timestamp}")
+
+    # # Print the list of users mentioned in the message
+    # print(f"Mentions: {target_message.mentions}")
+
+    # # Print the list of roles mentioned in the message
+    # #print(f"Mentioned roles: {target_message.mention_roles}")
+
+
+    if '[faq_id=' in message.content:
+        faq_id = int(message.content.split('[faq_id=')[1].split(']')[0])
+    else:
+        # The string does not contain the delimiter
+        await ctx.send("The message does not contain a valid FAQ ID.")
+        return
+
+    faq = await FAQ.get(id=faq_id)
+    vote_count = faq.likes
+
+    # Ask the user which direction they want to vote
+    await ctx.send("Enter 'up' to upvote or 'down' to downvote:")
+
+    # Wait for the user's response
+    try:
+        direction = await bot.wait_for('message', check=check, timeout=30.0)
+        direction = direction.content.lower()
+    except asyncio.TimeoutError:
+        await ctx.send("Timed out waiting for direction.")
+        return
+
+    # Update the vote count based on the direction
+    if direction == "up":
+        # Increment the vote count
+        vote_count = vote_count + 1
+        faqorm.like_faq(faq_id)
+    elif direction == "down":
+        # Decrement the vote count
+        vote_count = vote_count - 1
+        faqorm.unlike_faq(faq_id)
+    else:
+        # Invalid direction
+        await ctx.send("Please specify either 'up' or 'down' as the direction.")
+        return
+
+    # Store the new vote count somewhere (e.g. in a database or in a file)
+
+    # Edit the pinned message to include the updated vote count
+    await target_message.edit(content=f"{target_message.content} (Vote count: {vote_count})")
 
 
 @bot.command()
 async def hello(ctx):
     name = ctx.message.author.name
     await ctx.send(f'Nice to meet you, {name}!')
+
+@bot.command()
+async def show_message(ctx, message_id: int):
+    """Show the properties of a message with the given ID."""
+    # Get the channel where the command was called
+    channel = ctx.message.channel
+
+    # Get the message with the specified ID
+    message = await channel.fetch_message(message_id)
+
+    # Print the ID, content, and author of the message
+    if hasattr(message, "id"):
+        print(f"ID: {message.id}")
+    if hasattr(message, "content"):
+        print(f"Content: {message.content}")
+    if hasattr(message, "author"):
+        print(f"Author: {message.author}")
+
+    # Print the time the message was sent
+    if hasattr(message, "timestamp"):
+        print(f"Timestamp: {message.timestamp}")
+
+    # Print the list of users mentioned in the message
+    if hasattr(message, "mentions"):
+        print(f"Mentions: {message.mentions}")
+
+    # Print the list of roles mentioned in the message
+    if hasattr(message, "mention_roles"):
+        print(f"Mentioned roles: {message.mention_roles}")
+
 
 @bot.command()
 async def exit(ctx):
@@ -90,14 +260,15 @@ async def add_faq(ctx, channel: discord.TextChannel = None):
     answer = answer_response.content
 
     # Add the FAQ entry
-    await faqorm.add_faq(channel_id, ctx.message.id, question, answer)
+    faq_id = await faqorm.add_faq(channel_id, ctx.message.id, question, answer)
+    
+    # Add to the message content
+    ctx.message.content = f"[faq_id={faq_id}"
+    
     await ctx.send('FAQ added successfully!')
 
 
-class CustomMessage(discord.Message):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.custom_attributes = {}
+
 
 
 @bot.command()
@@ -118,39 +289,48 @@ async def list_faqs(ctx, channel: discord.TextChannel = None):
             # Create an Embed object
             embed = discord.Embed(
                 title=f'FAQ id: {faq.id}',
-                description=f'[faq_id={faq.id}] {faq.question}: {faq.answer} {faq.likes}',
+                description=f'[faq_id={faq.id}], m_id: {faq.message_id}, {faq.question}: {faq.answer} {faq.likes} : {faq.dislikes}',
                 color=discord.Color.blue()
             )
             # Add the Embed object to the message
             message = await ctx.send(embed=embed)
             # Add a reaction to the message
-            await message.add_reaction('👍')
+            #await message.add_reaction('👍')
 
 @bot.event
 async def on_reaction_add(reaction, user):
     # Get the message that the reaction was added to
     message = reaction.message
-    # Check if the reaction is the thumbs up emoji
+    # Get the Embed object associated with the message
+    embed = message.embeds[0]
+    # Get the faq_id from the description field of the Embed object
+    faq_id = int(embed.description.split('[faq_id=')[1].split(']')[0])
+    # Check for the thumbs up emoji
     if str(reaction.emoji) == '👍':
-        # Get the Embed object associated with the message
-        embed = message.embeds[0]
-        # Get the faq_id from the description field of the Embed object
-        faq_id = int(embed.description.split('[faq_id=')[1].split(']')[0])
         # Call the like_faq function with the faq_id
         await faqorm.like_faq(faq_id)
+    # Check for the thumbs down emoji
+    elif str(reaction.emoji) == '👎':
+        # Call the dislike_faq function with the faq_id
+        await faqorm.dislike_faq(faq_id)
 
 @bot.event
 async def on_reaction_remove(reaction, user):
     # Get the message that the reaction was removed from
     message = reaction.message
-    # Check if the reaction is the thumbs up emoji
+    # Get the Embed object associated with the message
+    embed = message.embeds[0]
+    # Get the faq_id from the description field of the Embed object
+    faq_id = int(embed.description.split('[faq_id=')[1].split(']')[0])
+    # Check for the thumbs up emoji
     if str(reaction.emoji) == '👍':
-        # Get the Embed object associated with the message
-        embed = message.embeds[0]
-        # Get the faq_id from the description field of the Embed object
-        faq_id = int(embed.description.split('[faq_id=')[1].split(']')[0])
         # Call the unlike_faq function with the faq_id
         await faqorm.unlike_faq(faq_id)
+    # Check for the thumbs down emoji
+    elif str(reaction.emoji) == '👎':
+        # Call the undislike_faq function with the faq_id
+        await faqorm.undislike_faq(faq_id)
+
 
 @bot.command()
 async def update_faq(ctx, faq_id: int = None):
