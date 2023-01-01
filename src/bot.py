@@ -205,25 +205,31 @@ async def show_message(ctx, message_id: int):
     # Get the message with the specified ID
     message = await channel.fetch_message(message_id)
 
-    # Print the ID, content, and author of the message
+    # Initialize an empty string to store the message properties
+    message_properties = ""
+
+    # Add the ID, content, and author of the message to the string
     if hasattr(message, "id"):
-        print(f"ID: {message.id}")
+        message_properties += f"ID: {message.id}\n"
     if hasattr(message, "content"):
-        print(f"Content: {message.content}")
+        message_properties += f"Content: {message.content}\n"
     if hasattr(message, "author"):
-        print(f"Author: {message.author}")
+        message_properties += f"Author: {message.author}\n"
 
-    # Print the time the message was sent
+    # Add the time the message was sent to the string
     if hasattr(message, "timestamp"):
-        print(f"Timestamp: {message.timestamp}")
+        message_properties += f"Timestamp: {message.timestamp}\n"
 
-    # Print the list of users mentioned in the message
+    # Add the list of users mentioned in the message to the string
     if hasattr(message, "mentions"):
-        print(f"Mentions: {message.mentions}")
+        message_properties += f"Mentions: {message.mentions}\n"
 
-    # Print the list of roles mentioned in the message
+    # Add the list of roles mentioned in the message to the string
     if hasattr(message, "mention_roles"):
-        print(f"Mentioned roles: {message.mention_roles}")
+        message_properties += f"Mentioned roles: {message.mention_roles}\n"
+
+    # Send the message properties as a message to the user
+    await ctx.send(message_properties)
 
 
 @bot.command()
@@ -259,13 +265,12 @@ async def add_faq(ctx, channel: discord.TextChannel = None):
     answer_response = await bot.wait_for('message', check=lambda message: message.author == ctx.author)
     answer = answer_response.content
 
+    confirm_message = await ctx.send(f"Adding:\n{question}\n{answer}")
+
     # Add the FAQ entry
-    faq_id = await faqorm.add_faq(channel_id, ctx.message.id, question, answer)
-    
-    # Add to the message content
-    ctx.message.content = f"[faq_id={faq_id}"
-    
-    await ctx.send('FAQ added successfully!')
+    faq_id = await faqorm.add_faq(channel_id, confirm_message.id, question, answer)
+
+    await ctx.send(f'FAQ added successfully!\n[faq_id={faq_id}]:{confirm_message.id}\n{question}\n{answer}')
 
 
 
