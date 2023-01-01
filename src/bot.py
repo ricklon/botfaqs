@@ -9,12 +9,18 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import has_permissions
 
+import openai
+
 import csv
 import faqorm 
 import setupdb
 
 #load secrets
 import creds
+
+#Open AI Key
+openai.api_key = creds.open_ai_token
+model_engine = "text-davinci-002"
 
 # Load the settings from the settings.toml file
 settings = toml.load("settings.toml")
@@ -579,6 +585,100 @@ async def save_faqs(ctx, filename: str = None):
     # Send the CSV file to the user
     await ctx.send(file=discord.File(bio, filename))
 
+@bot.command(name='suggest_answers')
+async def suggest_answers(ctx, *, answer: str = None):
+    if answer is None:
+        # Prompt the user for input
+        await ctx.send("Please provide an answer:")
+
+        # Wait for the user's response
+        def check(m):
+            return m.author == ctx.author and m.channel == ctx.channel
+        try:
+            response = await bot.wait_for('message', check=check, timeout=60.0)
+        except asyncio.TimeoutError:
+            await ctx.send("Sorry, you took too long to respond.")
+            return
+        else:
+            answer = response.content
+
+    # Prompt the user for the number of questions to generate
+    await ctx.send("Please provide the number of questions to generate:")
+
+    # Wait for the user's response
+    def check(m):
+        return m.author == ctx.author and m.channel == ctx.channel
+    try:
+        response = await bot.wait_for('message', check=check, timeout=60.0)
+    except asyncio.TimeoutError:
+        await ctx.send("Sorry, you took too long to respond.")
+        return
+    else:
+        try:
+            num_questions = int(response.content)
+        except ValueError:
+            await ctx.send("Invalid input. Please provide a positive integer.")
+            return
+
+    # Set the prompt
+    prompt = answer
+
+    # Generate the specified number of responses
+    completion = openai.Completion.create(engine=model_engine, prompt=prompt, max_tokens=1024, n=num_questions,stop=None,temperature=0.7)
+    messages = [choice.text for choice in completion.choices]
+
+    # Split the message into chunks of 4000 characters or fewer
+    chunks = [messages[i:i + 4000] for i in range(0, len(messages), 4000)]
+
+    # Send each chunk separately
+    for chunk in chunks:
+        await ctx.send(chunk)
+
+
+# Define a custom converter for the search query
+class QueryConverter(commands.Converter):
+    async def convert(self, ctx, argument):
+        # Split the argument into a list of words
+        words = argument.split()
+        
+        # Check if the user entered more than one word
+        if len(words) > 1:
+            # If the user entered more than one word, join the words into a single string
+            query = ' '.join(words)
+        else:
+            # If the user entered only one word, use it as the query
+            query = words[0]
+        
+        return query
+
+# Define a custom check for the search command
+def is_search_command(ctx):
+    # Check if the command is "search"
+    return ctx.command.name == 'search'
+
+@bot.command(name='search', check=is_search_command)
+async def search(ctx, *, query: QueryConverter = None):
+    # If the user did not provide a query, prompt them for input
+    if query is None:
+        # Prompt the user for input
+        query = await bot.wait_for('message', check=lambda message: message.author == ctx.author)
+        
+        # Split the message into a list of words
+        words = query.content.split()
+        
+        # Check if the user entered more than one word
+        if len(words) > 1:
+            # If the user entered more than one word, join the words into a single string
+            query = ' '.join(words)
+        else:
+            # If the user entered only one word, use it as the query
+            query = words[0]
+    
+    # Call the search_questions_and_answers function with the user's query
+    results = await faqorm.search_questions_and_answers(query)
+    
+    # Send the search results to the user
+    await ctx.send('\n'.join(f'{question}: {answer}' for question, answer in results))
 
 
 def run():

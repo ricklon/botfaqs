@@ -3,8 +3,14 @@ from tortoise import fields
 from tortoise.expressions import F
 import json
 import pandas as pd
+from sklearn.metrics.pairwise import cosine_similarity
+import openai
+from openai.embeddings_utils import get_embedding, cosine_similarity
 
+import creds
 
+openai.api_key = creds.open_ai_token
+embed_model_engine = "text-embedding-ada-002"
 
 class FAQ(Model):
     """Model for frequently asked questions."""
@@ -80,20 +86,29 @@ async def bulk_add_faqs(channel_id, message_id, faqs):
         await add_faq(channel_id, message_id, faq['question'], faq['answer'])
     return 'FAQs added successfully!'
 
-# #Reset all FAQs in a channel
-# async def reset_faqs(channel_id):
-#     """Delete all FAQ entries for a particular channel."""
-#     await FAQ.filter(channel_id=channel_id).delete()
+async def search_questions_and_answers(query):
+    embedding = get_embedding(query, model='text-embedding-ada-002')
+    # Initialize a list to store the results
+    results = []
 
-# No function .to_dataframe
-# async def save_faqs_as_csv():
+    # Retrieve the questions and answers from the database
+    faqs = await FAQ.all()
+    questions = [faq.question for faq in faqs]
+    answers = [faq.answer for faq in faqs]
 
-#     #get the orm data into a pandas df
-#     df = await FAQ.all().to_dataframe()
+    # Iterate through the questions and answers in the database
+    for question, answer in zip(questions, answers):
+        # Generate an embedding vector for the question
+        response = openai.Encode.create(engine=model_engine, prompt=question)
+        question_vector = response['data'][0]['vector']
 
-#     # Return the DataFrame so it can be used in the save_faqs function
-#     return df
+        # Compute the cosine similarity between the query vector and the question vector
+        cosine_similarity = cosine(query_vector, question_vector)
+        if cosine_similarity > 0.5:
+            # Add the question and answer to the results list if the cosine similarity is above a certain threshold
+            results.append((question, answer))
 
+    return results
 
 #Reset all FAQs
 async def reset_all():
