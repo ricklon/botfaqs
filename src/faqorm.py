@@ -19,6 +19,12 @@ class FAQ(Model):
     updated_at = fields.DatetimeField(auto_now=True)
 
 
+async def get_votes(faq_id):
+    faq = await FAQ.get(id=faq_id)
+    votes_up = faq.likes
+    votes_down = faq.dislikes
+    return votes_up, votes_down
+
 async def add_faq(channel_id, message_id, question, answer):
     """Create a new FAQ entry."""
     faq = await FAQ.create(channel_id=channel_id, message_id=message_id, question=question, answer=answer)
@@ -31,6 +37,10 @@ async def list_faqs(channel_id):
 async def update_faq(faq_id, question, answer):
     """Update the question and answer for a particular FAQ entry."""
     await FAQ.filter(id=faq_id).update(question=question, answer=answer)
+
+async def update_message_id(faq_id, message_id):
+    """Update the message_id for a particular FAQ entry."""
+    await FAQ.filter(id=faq_id).update(message_id=message_id)
 
 async def delete_faq(faq_id):
     """Delete a particular FAQ entry."""

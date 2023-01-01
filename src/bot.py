@@ -3,6 +3,7 @@ import os
 import asyncio
 import logging
 import toml
+import re
 
 import discord
 from discord.ext import commands
@@ -49,47 +50,9 @@ async def on_ready():
     await channel.send(f"Logged in as {bot.user.name}")
 
 
-# @bot.command()
-# async def vote(ctx, direction: str):
-#     """Upvote or downvote a pinned message."""
-#     # Get the channel where the command was called
-#     channel = ctx.message.channel
-
-#     # Get the pinned messages in the channel
-#     pins = await channel.pins()
-
-#     # Find the message the user wants to vote on
-#     target_message = None
-#     for message in pins:
-#         if message.id == ctx.message.id:
-#             target_message = message
-#             break
-
-#     if target_message is None:
-#         # The message the user wants to vote on is not pinned
-#         await ctx.send("That message is not pinned!")
-#         return
-
-#     # Update the vote count based on the direction
-#     if direction.lower() == "up":
-#         # Increment the vote count
-#         vote_count = target_message.vote_count + 1
-#     elif direction.lower() == "down":
-#         # Decrement the vote count
-#         vote_count = target_message.vote_count - 1
-#     else:
-#         # Invalid direction
-#         await ctx.send("Please specify either 'up' or 'down' as the direction.")
-#         return
-
-#     # Store the new vote count somewhere (e.g. in a database or in a file)
-
-#     # Edit the pinned message to include the updated vote count
-#     await target_message.edit(content=f"{target_message.content} (Vote count: {vote_count})")
-
 
 @bot.command()
-async def vote(ctx):
+async def vote_pinned(ctx):
     """Upvote or downvote a pinned message."""
     # Get the channel where the command was called
     channel = ctx.message.channel
@@ -132,24 +95,6 @@ async def vote(ctx):
         await ctx.send("That message is not pinned!")
         return
 
-    # target_message = await ctx.fetch_message(target_message.id)
-    # #faq_id = int(message.content.split('[faq_id=')[1].split(']')[0])
-    # #Debug message
-    # # Print the ID, content, and author of the message
-    # print(f"ID: {target_message.id}")
-    # print(f"Content: {target_message.content}")
-    # print(f"Author: {target_message.author}")
-
-    # # Print the time the message was sent
-    # #print(f"Timestamp: {target_message.timestamp}")
-
-    # # Print the list of users mentioned in the message
-    # print(f"Mentions: {target_message.mentions}")
-
-    # # Print the list of roles mentioned in the message
-    # #print(f"Mentioned roles: {target_message.mention_roles}")
-
-
     if '[faq_id=' in message.content:
         faq_id = int(message.content.split('[faq_id=')[1].split(']')[0])
     else:
@@ -157,9 +102,9 @@ async def vote(ctx):
         await ctx.send("The message does not contain a valid FAQ ID.")
         return
 
-    faq = await FAQ.get(id=faq_id)
-    vote_count = faq.likes
-
+    faq = await faqorm.get_faq(faq_id)
+    up_count = faq.likes
+    down_count = faq.dislikes
     # Ask the user which direction they want to vote
     await ctx.send("Enter 'up' to upvote or 'down' to downvote:")
 
@@ -174,21 +119,26 @@ async def vote(ctx):
     # Update the vote count based on the direction
     if direction == "up":
         # Increment the vote count
-        vote_count = vote_count + 1
-        faqorm.like_faq(faq_id)
+        up_count = up_count + 1
+        await faqorm.like_faq(faq_id)
     elif direction == "down":
         # Decrement the vote count
-        vote_count = vote_count - 1
-        faqorm.unlike_faq(faq_id)
+        down_count = down_count - 1
+        await faqorm.unlike_faq(faq_id)
     else:
         # Invalid direction
         await ctx.send("Please specify either 'up' or 'down' as the direction.")
         return
+    
+    # Use a regular expression to search for the content within the parentheses
+    pattern = r"\((.*)\)"
 
-    # Store the new vote count somewhere (e.g. in a database or in a file)
+    # Replace the content within the parentheses with the updated vote count
+    content = re.sub(pattern, f"(Up Votes: {up_count}, Down Votes: {down_count})", target_message.content)
 
     # Edit the pinned message to include the updated vote count
-    await target_message.edit(content=f"{target_message.content} (Vote count: {vote_count})")
+    await target_message.edit(content=content)
+    await ctx.send(f"(Up Votes: {up_count}, Down Votes: {down_count}")
 
 
 @bot.command()
@@ -270,7 +220,10 @@ async def add_faq(ctx, channel: discord.TextChannel = None):
     # Add the FAQ entry
     faq_id = await faqorm.add_faq(channel_id, confirm_message.id, question, answer)
 
-    await ctx.send(f'FAQ added successfully!\n[faq_id={faq_id}]:{confirm_message.id}\n{question}\n{answer}')
+    msg = await ctx.send(f'[faq_id={faq_id}]\n{question}\n{answer}')
+
+    #Update the FAQ entry with the message_id of the message with the full summary
+    await faqorm.update_message_id(faq_id, msg.id)
 
 
 
