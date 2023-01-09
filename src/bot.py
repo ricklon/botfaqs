@@ -23,7 +23,7 @@ openai.api_key = creds.open_ai_token
 model_engine = "text-davinci-002"
 
 # Load the settings from the settings.toml file
-settings = toml.load("settings.toml")
+settings = toml.load("./settings.toml")
 
 # Extract the values from the settings dictionary
 allowed_channel_name = settings["allowed_channel_name"]
@@ -241,11 +241,12 @@ async def list_faqs(ctx, channel: discord.TextChannel = None):
     # If no channel is provided, use the current channel
     if channel is None:
         channel = ctx.channel
-    print(f"Adding FAQ for channel: {ctx.channel.name}, id: {channel.id}, msg.id: {ctx.message.id}")
+    print(f"Listing FAQs for channel: {ctx.channel.name}, id: {channel.id}, msg.id: {ctx.message.id}")
     # Set the channel_id to the channel's ID
     channel_id = channel.id
 
     faqs = await faqorm.list_faqs(str(channel_id))
+    
     if not faqs:
         await ctx.send('There are no FAQs for this channel.')
     else:
