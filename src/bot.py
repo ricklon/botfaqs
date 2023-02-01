@@ -15,8 +15,12 @@ import csv
 import faqorm 
 import setupdb
 
-#load secrets
-import creds
+#Set the Discord Bot token from an envronment variable
+DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
+
+# Set the OpenAI API key using an environment variable
+openai.api_key = os.environ["OPENAIAPI_TOKEN"]
+
 
 #Open AI Key
 openai.api_key = creds.open_ai_token
@@ -246,7 +250,7 @@ async def list_faqs(ctx, channel: discord.TextChannel = None):
     channel_id = channel.id
 
     faqs = await faqorm.list_faqs(str(channel_id))
-    
+
     if not faqs:
         await ctx.send('There are no FAQs for this channel.')
     else:
@@ -686,7 +690,7 @@ def run():
     # run the tortoise orm setup
     asyncio.run(setupdb.create_database())
     # Use the Discord bot token variable when starting the bot
-    bot.run(creds.discord_bot_token)
+    bot.run(DISCORD_BOT_TOKEN)
 
 if __name__ == "__main__":
     run()

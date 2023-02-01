@@ -3,6 +3,9 @@ FROM python:3.10
 # Set the working directory
 WORKDIR /app
 
+# Install Poetry
+RUN pip install poetry
+
 # Copy the requirements file
 COPY pyproject.toml poetry.lock ./
 
