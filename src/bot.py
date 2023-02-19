@@ -15,11 +15,16 @@ import csv
 import faqorm 
 import setupdb
 
+import creds
+
 #Set the Discord Bot token from an envronment variable
-DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
+#DISCORD_BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
+DISCORD_BOT_TOKEN = creds.discord_bot_token
+
+#print("DISCORD_BOT_TOKEN: " + DISCORD_BOT_TOKEN)
 
 # Set the OpenAI API key using an environment variable
-openai.api_key = os.environ["OPENAIAPI_TOKEN"]
+#openai.api_key = os.environ["OPENAIAPI_TOKEN"]
 
 
 #Open AI Key
@@ -27,7 +32,7 @@ openai.api_key = creds.open_ai_token
 model_engine = "text-davinci-002"
 
 # Load the settings from the settings.toml file
-settings = toml.load("./settings.toml")
+settings = toml.load("settings.toml")
 
 # Extract the values from the settings dictionary
 allowed_channel_name = settings["allowed_channel_name"]
