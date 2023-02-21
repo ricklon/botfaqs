@@ -1,0 +1,38 @@
+name: Deploy to DigitalOcean
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v1
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+    - name: Build Docker image
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        push: true
+        tags: ricklon/botfaqs:latest
+
+    # - name: Install DigitalOcean CLI
+    #   run: |
+    #     sudo apt-get update && sudo apt-get -y install curl
+    #     curl -sL https://repos.insights.digitalocean.com/install.sh | sudo bash
+    #     doctl auth init -t ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+    # - name: Deploy to DigitalOcean
+    #   run: |
+    #     doctl registry login
+    #     doctl kubernetes cluster kubeconfig save yourclustername
+    #     kubectl apply -f kubernetes/deployment.yaml
